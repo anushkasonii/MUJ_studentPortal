@@ -106,28 +106,35 @@ function StudentForm() {
   });
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom align="center" color="primary">
-          Internship NOC Application
-        </Typography>
-        {fileError && (
-          <Alert severity="error" sx={{ mb: 2 }}>{fileError}</Alert>
-        )}
-        <form onSubmit={formik.handleSubmit}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                id="registrationNumber"
-                name="registrationNumber"
-                label="Registration Number"
-                value={formik.values.registrationNumber}
-                onChange={formik.handleChange}
-                error={formik.touched.registrationNumber && Boolean(formik.errors.registrationNumber)}
-                helperText={formik.touched.registrationNumber && formik.errors.registrationNumber}
-              />
-            </Grid>
+    <Box>
+      <Box className="app-header" sx={{ py: 3, backgroundColor: '#1976d2', color: 'white', textAlign: 'center' , mb:1}}>
+        <Typography variant="h4" sx={{mb:3}}>Internship NOC Application Portal</Typography>
+      </Box>
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+          <Typography variant="h5" gutterBottom align="center" color="primary">
+            Fill in the Details
+          </Typography>
+          {fileError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {fileError}
+            </Alert>
+          )}
+          <form onSubmit={formik.handleSubmit}>
+            <Grid container spacing={3}>
+              {/* Registration Number */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  id="registrationNumber"
+                  name="registrationNumber"
+                  label="Registration Number"
+                  value={formik.values.registrationNumber}
+                  onChange={formik.handleChange}
+                  error={formik.touched.registrationNumber && Boolean(formik.errors.registrationNumber)}
+                  helperText={formik.touched.registrationNumber && formik.errors.registrationNumber}
+                />
+              </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -330,15 +337,15 @@ function StudentForm() {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1" gutterBottom>
-                Offer Letter (PDF only)
-              </Typography>
-              <input
-                accept="application/pdf"
-                type="file"
-                onChange={(e) => setOfferLetter(e.target.files[0])}
-              />
-            </Grid>
+                <Typography variant="subtitle1" gutterBottom>
+                  Offer Letter (PDF only)
+                </Typography>
+                <input
+                  accept="application/pdf"
+                  type="file"
+                  onChange={(e) => setOfferLetter(e.target.files[0])}
+                />
+              </Grid>
             <Grid item xs={12} sm={6}>
               <Typography variant="subtitle1" gutterBottom>
                 Mail Copy (PDF only)
@@ -367,22 +374,25 @@ function StudentForm() {
               )}
             </Grid>
             <Grid item xs={12}>
-              <Button
-                variant="contained"
-                color="primary"
-                type="submit"
-                size="large"
-                fullWidth
-                disabled={!formik.isValid || !formik.values.termsAccepted}
-              >
-                Submit Application
+                <Button
+                  variant="contained"
+              color="primary"
+              type="submit"
+              size="large"
+              fullWidth
+              className="submit-button"
+              disabled={!formik.isValid || !formik.values.termsAccepted}
+            >
+              Submit Application
               </Button>
+              </Grid>
             </Grid>
-          </Grid>
-        </form>
-      </Paper>
-    </Container>
+          </form>
+        </Paper>
+      </Container>
+    </Box>
   );
 }
+
 
 export default StudentForm;

@@ -1,11 +1,10 @@
 import { Navigate } from 'react-router-dom';
 
 function ProtectedRoute({ children, role }) {
-  // This is a placeholder authentication check
-  // Replace with your actual authentication logic
-  const isAuthenticated = false; // Replace with actual auth check
-  const userRole = ''; // Replace with actual user role
-
+  const isAuthenticated = false;
+  const userRole = '';
+  
+  
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
@@ -16,5 +15,6 @@ function ProtectedRoute({ children, role }) {
 
   return children;
 }
+
 
 export default ProtectedRoute;

@@ -29,7 +29,6 @@ import {
 
 function ReviewerPortal() {
   const [applications, setApplications] = useState([
-    // Sample data - replace with actual API call
     {
       id: 1,
       studentName: 'John Doe',
@@ -41,7 +40,6 @@ function ReviewerPortal() {
       startDate: '2024-06-01',
       status: 'pending',
     },
-    // Add more sample data as needed
   ]);
 
   const [selectedApp, setSelectedApp] = useState(null);
@@ -64,7 +62,6 @@ function ReviewerPortal() {
       return;
     }
 
-    // Handle application action
     console.log(`Application ${selectedApp.id} ${action} with remarks: ${remarks}`);
     setOpenDialog(false);
     setRemarks('');
