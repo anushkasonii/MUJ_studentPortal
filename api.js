@@ -1,22 +1,32 @@
-import axios from 'axios';
+// src/services/api.js
+const BASE_URL = 'http://localhost:8080';
 
-// Create an Axios instance
-const api = axios.create({
-    baseURL: 'http://localhost:8081', // Your backend base URL
-});
+export const api = {
+  // Student
+  submitApplication: (formData) => fetch(`${BASE_URL}/submit`, {
+    method: 'POST',
+    body: formData,
+  }),
 
-// Add a request interceptor to include the token in headers
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
+  // Reviewer
+  reviewerLogin: (credentials) => fetch(`${BASE_URL}/reviewer/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  }),
+  
+  getSubmissions: () => fetch(`${BASE_URL}/reviewer/submissions`, {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+  }),
 
-export default api;
+  // HOD
+  hodLogin: (credentials) => fetch(`${BASE_URL}/hod/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  }),
+  
+  getApprovedSubmissions: () => fetch(`${BASE_URL}/hod/submissions/approved`, {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+  }),
+};

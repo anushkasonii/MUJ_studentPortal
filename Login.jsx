@@ -20,14 +20,24 @@ function Login() {
 
   const handleSubmit = (e, role) => {
     e.preventDefault();
-    if (formData.username && formData.password) {
-      if (role === 'reviewer') {
-        navigate('/reviewer');
-      } else if (role === 'hod') {
-        navigate('/hod');
-      }
-    } else {
+    
+    // Basic validation
+    if (!formData.username || !formData.password) {
       setError('Please fill in all fields');
+      return;
+    }
+
+    // Temporary login logic (replace with actual API integration)
+    if (formData.username === 'reviewer' && formData.password === 'password' && role === 'reviewer') {
+      localStorage.setItem('userRole', 'reviewer');
+      localStorage.setItem('isAuthenticated', 'true');
+      navigate('/reviewer');
+    } else if (formData.username === 'hod' && formData.password === 'password' && role === 'hod') {
+      localStorage.setItem('userRole', 'hod');
+      localStorage.setItem('isAuthenticated', 'true');
+      navigate('/hod');
+    } else {
+      setError('Invalid credentials');
     }
   };
 

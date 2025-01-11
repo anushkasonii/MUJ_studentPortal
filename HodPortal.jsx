@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Container,
   Paper,
@@ -20,30 +20,39 @@ import {
 } from '@mui/material';
 
 function HodPortal() {
-  const [applications, setApplications] = useState([
-    {
-      id: 1,
-      studentName: 'John Doe',
-      registrationNumber: '12345',
-      department: 'CSE',
-      companyName: 'Tech Corp',
-      reviewerApproval: 'approved',
-      status: 'pending_hod',
-    },
-  ]);
-
+  const [applications, setApplications] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [error, setError] = useState('');
+  const [action, setAction] = useState('');
 
-  const handleAction = (action) => {
+  useEffect(() => {
+    const storedApplications = JSON.parse(localStorage.getItem('applications') || '[]');
+    const acceptedApplications = storedApplications.filter(app => app.status === 'accepted');
+    setApplications(acceptedApplications);
+  }, []);
+
+  const handleAction = (app, actionType) => {
+    setSelectedApp(app);
+    setAction(actionType);
+    setOpenDialog(true);
+    setError('');
+  };
+
+  const handleSubmit = () => {
     if (action === 'reject' && !remarks.trim()) {
       setError('Comments are required for rejection');
       return;
     }
 
-    console.log(`Application ${selectedApp.id} ${action} with remarks: ${remarks}`);
+    const updatedApplications = applications.map(app =>
+      app.id === selectedApp.id
+        ? { ...app, hodStatus: action, hodRemarks: remarks }
+        : app
+    );
+
+    setApplications(updatedApplications);
     setOpenDialog(false);
     setRemarks('');
     setSelectedApp(null);
@@ -64,53 +73,57 @@ function HodPortal() {
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: '#1976d2' }}>
+              <TableRow sx={{ backgroundColor: '#1e4c90' }}>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Reg. No.</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Student Name</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Department</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Company</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Reviewer Status</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Offer Type</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Stipend</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {applications.map((app) => (
-                <TableRow 
-                  key={app.id}
-                  sx={{ '&:nth-of-type(odd)': { backgroundColor: '#f5f5f5' } }}
-                >
+                <TableRow key={app.id}>
                   <TableCell>{app.registrationNumber}</TableCell>
                   <TableCell>{app.studentName}</TableCell>
                   <TableCell>{app.department}</TableCell>
                   <TableCell>{app.companyName}</TableCell>
+                  <TableCell>{app.offerType}</TableCell>
+                  <TableCell>₹{app.stipend}</TableCell>
                   <TableCell>
-                    <Box
-                      sx={{
-                        backgroundColor: app.reviewerApproval === 'approved' ? '#4caf50' : '#f44336',
-                        color: 'white',
-                        py: 0.5,
-                        px: 1.5,
-                        borderRadius: 1,
-                        display: 'inline-block',
-                      }}
-                    >
-                      {app.reviewerApproval.toUpperCase()}
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        size="small"
+                        onClick={() => handleAction(app, 'accept')}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        size="small"
+                        onClick={() => handleAction(app, 'reject')}
+                      >
+                        Reject
+                      </Button>
                     </Box>
                   </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                      onClick={() => {
-                        setSelectedApp(app);
-                        setOpenDialog(true);
-                        setError('');
-                      }}
-                      sx={{ mr: 1 }}
-                    >
-                      Review
-                    </Button>
+                  <TableCell sx={{ 
+                    backgroundColor: app.hodStatus === 'accept' ? '#e8f5e9' : 
+                                   app.hodStatus === 'reject' ? '#ffebee' : 
+                                   'transparent',
+                    color: app.hodStatus === 'accept' ? '#2e7d32' :
+                          app.hodStatus === 'reject' ? '#d32f2f' :
+                          'inherit',
+                    fontWeight: 'bold',
+                    textTransform: 'capitalize'
+                  }}>
+                    {app.hodStatus || ''}
                   </TableCell>
                 </TableRow>
               ))}
@@ -128,43 +141,34 @@ function HodPortal() {
         <DialogTitle sx={{ backgroundColor: '#f8f9fa', borderBottom: '1px solid #ddd' }}>
           Review Application
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ mt: 2 }}>
           {error && (
-            <Alert severity="error" sx={{ mt: 2, mb: 1 }}>
+            <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
           <TextField
             fullWidth
-            label="Remarks"
+            label="Comments"
             multiline
             rows={4}
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
-            sx={{ mt: 2 }}
+            required={action === 'reject'}
             error={error !== ''}
             helperText={error}
+            sx={{ mt: 1 }}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2, backgroundColor: '#f8f9fa', borderTop: '1px solid #ddd' }}>
-          <Button 
-            onClick={() => handleAction('approve')} 
-            variant="contained" 
-            color="success"
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            color={action === 'accept' ? 'success' : 'error'}
           >
-            Approve
+            Confirm
           </Button>
-          <Button 
-            onClick={() => handleAction('reject')} 
-            variant="contained" 
-            color="error"
-          >
-            Reject
-          </Button>
-          <Button 
-            onClick={() => setOpenDialog(false)} 
-            variant="outlined"
-          >
+          <Button onClick={() => setOpenDialog(false)} variant="outlined">
             Cancel
           </Button>
         </DialogActions>

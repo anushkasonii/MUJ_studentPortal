@@ -17,15 +17,7 @@ import {
   TextField,
   Box,
   Alert,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
-import {
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-  Refresh as RefreshIcon,
-  Comment as CommentIcon,
-} from '@mui/icons-material';
 
 function ReviewerPortal() {
   const [applications, setApplications] = useState([
@@ -38,7 +30,51 @@ function ReviewerPortal() {
       offerType: 'On-Campus',
       stipend: '30000',
       startDate: '2024-06-01',
-      status: 'pending',
+      status: '',
+    },
+    {
+      id: 2,
+      studentName: 'Jane Smith',
+      registrationNumber: '12346',
+      department: 'ECE',
+      companyName: 'Digital Solutions',
+      offerType: 'Off-Campus',
+      stipend: '35000',
+      startDate: '2024-06-15',
+      status: '',
+    },
+    {
+      id: 3,
+      studentName: 'Mike Johnson',
+      registrationNumber: '12347',
+      department: 'IT',
+      companyName: 'Software Inc',
+      offerType: 'On-Campus',
+      stipend: '40000',
+      startDate: '2024-07-01',
+      status: '',
+    },
+    {
+      id: 4,
+      studentName: 'Sarah Williams',
+      registrationNumber: '12348',
+      department: 'CSE',
+      companyName: 'Cloud Systems',
+      offerType: 'Off-Campus',
+      stipend: '45000',
+      startDate: '2024-07-15',
+      status: '',
+    },
+    {
+      id: 5,
+      studentName: 'Robert Brown',
+      registrationNumber: '12349',
+      department: 'ECE',
+      companyName: 'Tech Solutions',
+      offerType: 'On-Campus',
+      stipend: '38000',
+      startDate: '2024-06-30',
+      status: '',
     },
   ]);
 
@@ -56,13 +92,46 @@ function ReviewerPortal() {
     setError('');
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'accepted':
+        return '#e8f5e9';
+      case 'rejected':
+        return '#ffebee';
+      case 'rework':
+        return '#fff3e0';
+      default:
+        return 'transparent';
+    }
+  };
+
+  const getStatusTextColor = (status) => {
+    switch (status) {
+      case 'accepted':
+        return '#2e7d32';
+      case 'rejected':
+        return '#d32f2f';
+      case 'rework':
+        return '#ed6c02';
+      default:
+        return 'inherit';
+    }
+  };
+
   const handleSubmit = () => {
     if ((action === 'reject' || action === 'rework') && !remarks.trim()) {
       setError('Comments are required for reject/rework actions');
       return;
     }
 
-    console.log(`Application ${selectedApp.id} ${action} with remarks: ${remarks}`);
+    const updatedApplications = applications.map(app =>
+      app.id === selectedApp.id
+        ? { ...app, status: action, remarks: remarks }
+        : app
+    );
+
+    setApplications(updatedApplications);
+    localStorage.setItem('applications', JSON.stringify(updatedApplications));
     setOpenDialog(false);
     setRemarks('');
     setSelectedApp(null);
@@ -80,10 +149,10 @@ function ReviewerPortal() {
         >
           Reviewer Portal - Student Applications
         </Typography>
-        <TableContainer component={Paper} sx={{ mb: 4 }}>
-          <Table sx={{ minWidth: 650 }}>
+        <TableContainer component={Paper}>
+          <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: '#1976d2' }}>
+              <TableRow sx={{ backgroundColor: '#1e4c90' }}>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Reg. No.</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Student Name</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Department</TableCell>
@@ -92,14 +161,12 @@ function ReviewerPortal() {
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Stipend</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Start Date</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {applications.map((app) => (
-                <TableRow 
-                  key={app.id}
-                  sx={{ '&:nth-of-type(odd)': { backgroundColor: '#f5f5f5' } }}
-                >
+                <TableRow key={app.id}>
                   <TableCell>{app.registrationNumber}</TableCell>
                   <TableCell>{app.studentName}</TableCell>
                   <TableCell>{app.department}</TableCell>
@@ -108,40 +175,40 @@ function ReviewerPortal() {
                   <TableCell>₹{app.stipend}</TableCell>
                   <TableCell>{new Date(app.startDate).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Tooltip title="Accept">
-                        <IconButton
-                          color="success"
-                          onClick={() => handleActionClick(app, 'accept')}
-                        >
-                          <CheckCircleIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Reject">
-                        <IconButton
-                          color="error"
-                          onClick={() => handleActionClick(app, 'reject')}
-                        >
-                          <CancelIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Rework">
-                        <IconButton
-                          color="warning"
-                          onClick={() => handleActionClick(app, 'rework')}
-                        >
-                          <RefreshIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="View Details">
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleActionClick(app, 'view')}
-                        >
-                          <CommentIcon />
-                        </IconButton>
-                      </Tooltip>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        size="small"
+                        onClick={() => handleActionClick(app, 'accepted')}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        size="small"
+                        onClick={() => handleActionClick(app, 'rejected')}
+                      >
+                        Reject
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="warning"
+                        size="small"
+                        onClick={() => handleActionClick(app, 'rework')}
+                      >
+                        Rework
+                      </Button>
                     </Box>
+                  </TableCell>
+                  <TableCell sx={{ 
+                    backgroundColor: getStatusColor(app.status),
+                    color: getStatusTextColor(app.status),
+                    fontWeight: 'bold',
+                    textTransform: 'capitalize'
+                  }}>
+                    {app.status}
                   </TableCell>
                 </TableRow>
               ))}
@@ -157,7 +224,7 @@ function ReviewerPortal() {
         fullWidth
       >
         <DialogTitle sx={{ backgroundColor: '#f8f9fa', borderBottom: '1px solid #ddd' }}>
-          {action === 'view' ? 'Application Details' : 'Review Application'}
+          Review Application
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           {error && (
@@ -165,58 +232,29 @@ function ReviewerPortal() {
               {error}
             </Alert>
           )}
-          {action === 'view' && selectedApp && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body1" gutterBottom>
-                <strong>Student Name:</strong> {selectedApp.studentName}
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                <strong>Registration Number:</strong> {selectedApp.registrationNumber}
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                <strong>Department:</strong> {selectedApp.department}
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                <strong>Company:</strong> {selectedApp.companyName}
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                <strong>Offer Type:</strong> {selectedApp.offerType}
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                <strong>Stipend:</strong> ₹{selectedApp.stipend}
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                <strong>Start Date:</strong> {new Date(selectedApp.startDate).toLocaleDateString()}
-              </Typography>
-            </Box>
-          )}
-          {action !== 'view' && (
-            <TextField
-              fullWidth
-              label="Comments"
-              multiline
-              rows={4}
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              required={action === 'reject' || action === 'rework'}
-              error={error !== ''}
-              helperText={error}
-              sx={{ mt: 1 }}
-            />
-          )}
+          <TextField
+            fullWidth
+            label="Comments"
+            multiline
+            rows={4}
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            required={action === 'rejected' || action === 'rework'}
+            error={error !== ''}
+            helperText={error}
+            sx={{ mt: 1 }}
+          />
         </DialogContent>
         <DialogActions sx={{ p: 2, backgroundColor: '#f8f9fa', borderTop: '1px solid #ddd' }}>
-          {action !== 'view' && (
-            <Button
-              onClick={handleSubmit}
-              variant="contained"
-              color={action === 'accept' ? 'success' : action === 'reject' ? 'error' : 'warning'}
-            >
-              {action.charAt(0).toUpperCase() + action.slice(1)}
-            </Button>
-          )}
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            color={action === 'accepted' ? 'success' : action === 'rejected' ? 'error' : 'warning'}
+          >
+            Confirm
+          </Button>
           <Button onClick={() => setOpenDialog(false)} variant="outlined">
-            Close
+            Cancel
           </Button>
         </DialogActions>
       </Dialog>

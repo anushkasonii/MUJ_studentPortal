@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
+import axios from 'axios';
 
 const SUPPORTED_FORMATS = ['application/pdf'];
 const FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -62,6 +63,7 @@ function StudentForm() {
   const [offerLetter, setOfferLetter] = useState(null);
   const [mailCopy, setMailCopy] = useState(null);
   const [fileError, setFileError] = useState('');
+  const [submissionStatus, setSubmissionStatus] = useState('');
 
   const validateFile = (file) => {
     if (!file) return 'File is required';
@@ -91,35 +93,48 @@ function StudentForm() {
       termsAccepted: false,
     },
     validationSchema: validationSchema,
-    onSubmit: (values) => {
+    onSubmit: async (values) => {
       const offerLetterError = validateFile(offerLetter);
       const mailCopyError = validateFile(mailCopy);
-      
+
       if (offerLetterError || mailCopyError) {
         setFileError(offerLetterError || mailCopyError);
         return;
       }
 
-      // Handle form submission
-      console.log(values, offerLetter, mailCopy);
+      // Prepare FormData
+      const formData = new FormData();
+      Object.entries(values).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+      formData.append('offerLetter', offerLetter);
+      formData.append('mailCopy', mailCopy);
+
+      try {
+        // Send POST request to /submit
+        const response = await axios.post('/submit', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        setSubmissionStatus('Form submitted successfully!');
+      } catch (error) {
+        setSubmissionStatus('Failed to submit the form. Please try again.');
+        console.error('Error submitting form:', error.response?.data || error.message);
+      }
     },
   });
 
   return (
     <Box>
-      <Box className="app-header" sx={{ py: 3, backgroundColor: '#1976d2', color: 'white', textAlign: 'center' , mb:1}}>
-        <Typography variant="h4" sx={{mb:3}}>Internship NOC Application Portal</Typography>
+      <Box className="app-header" sx={{ py: 3, backgroundColor: '#1976d2', color: 'white', textAlign: 'center', mb: 1 }}>
+        <Typography variant="h4" sx={{ mb: 3 }}>Internship NOC Application Portal</Typography>
       </Box>
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
           <Typography variant="h5" gutterBottom align="center" color="primary">
             Fill in the Details
           </Typography>
-          {fileError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {fileError}
-            </Alert>
-          )}
+          {fileError && <Alert severity="error" sx={{ mb: 2 }}>{fileError}</Alert>}
+          {submissionStatus && <Alert severity={submissionStatus.includes('successfully') ? 'success' : 'error'} sx={{ mb: 2 }}>{submissionStatus}</Alert>}
           <form onSubmit={formik.handleSubmit}>
             <Grid container spacing={3}>
               {/* Registration Number */}
@@ -381,7 +396,6 @@ function StudentForm() {
               size="large"
               fullWidth
               className="submit-button"
-              disabled={!formik.isValid || !formik.values.termsAccepted}
             >
               Submit Application
               </Button>
