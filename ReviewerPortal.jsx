@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import {
   Container,
   Paper,
@@ -17,72 +18,34 @@ import {
   TextField,
   Box,
   Alert,
+  CircularProgress,
 } from '@mui/material';
+import { getSubmissions, submitReview } from '../services/api';
 
 function ReviewerPortal() {
-  const [applications, setApplications] = useState([
-    {
-      id: 1,
-      studentName: 'John Doe',
-      registrationNumber: '12345',
-      department: 'CSE',
-      companyName: 'Tech Corp',
-      offerType: 'On-Campus',
-      stipend: '30000',
-      startDate: '2024-06-01',
-      status: '',
-    },
-    {
-      id: 2,
-      studentName: 'Jane Smith',
-      registrationNumber: '12346',
-      department: 'ECE',
-      companyName: 'Digital Solutions',
-      offerType: 'Off-Campus',
-      stipend: '35000',
-      startDate: '2024-06-15',
-      status: '',
-    },
-    {
-      id: 3,
-      studentName: 'Mike Johnson',
-      registrationNumber: '12347',
-      department: 'IT',
-      companyName: 'Software Inc',
-      offerType: 'On-Campus',
-      stipend: '40000',
-      startDate: '2024-07-01',
-      status: '',
-    },
-    {
-      id: 4,
-      studentName: 'Sarah Williams',
-      registrationNumber: '12348',
-      department: 'CSE',
-      companyName: 'Cloud Systems',
-      offerType: 'Off-Campus',
-      stipend: '45000',
-      startDate: '2024-07-15',
-      status: '',
-    },
-    {
-      id: 5,
-      studentName: 'Robert Brown',
-      registrationNumber: '12349',
-      department: 'ECE',
-      companyName: 'Tech Solutions',
-      offerType: 'On-Campus',
-      stipend: '38000',
-      startDate: '2024-06-30',
-      status: '',
-    },
-  ]);
-
+  const [applications, setApplications] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [error, setError] = useState('');
   const [action, setAction] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const fetchApplications = async () => {
+    try {
+      const data = await getSubmissions();
+      setApplications(data);
+    } catch (error) {
+      toast.error('Failed to fetch applications');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleActionClick = (app, actionType) => {
     setSelectedApp(app);
@@ -92,51 +55,41 @@ function ReviewerPortal() {
     setError('');
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'accepted':
-        return '#e8f5e9';
-      case 'rejected':
-        return '#ffebee';
-      case 'rework':
-        return '#fff3e0';
-      default:
-        return 'transparent';
-    }
-  };
-
-  const getStatusTextColor = (status) => {
-    switch (status) {
-      case 'accepted':
-        return '#2e7d32';
-      case 'rejected':
-        return '#d32f2f';
-      case 'rework':
-        return '#ed6c02';
-      default:
-        return 'inherit';
-    }
-  };
-
-  const handleSubmit = () => {
-    if ((action === 'reject' || action === 'rework') && !remarks.trim()) {
+  const handleSubmit = async () => {
+    if ((action === 'rejected' || action === 'rework') && !remarks.trim()) {
       setError('Comments are required for reject/rework actions');
       return;
     }
 
-    const updatedApplications = applications.map(app =>
-      app.id === selectedApp.id
-        ? { ...app, status: action, remarks: remarks }
-        : app
-    );
+    try {
+      setIsSubmitting(true);
+      await submitReview({
+        submissionId: selectedApp.id,
+        status: action,
+        remarks: remarks,
+      });
 
-    setApplications(updatedApplications);
-    localStorage.setItem('applications', JSON.stringify(updatedApplications));
-    setOpenDialog(false);
-    setRemarks('');
-    setSelectedApp(null);
-    setError('');
+      await fetchApplications();
+      toast.success('Review submitted successfully');
+      setOpenDialog(false);
+      setRemarks('');
+      setSelectedApp(null);
+      setError('');
+    } catch (error) {
+      toast.error(error.message || 'Failed to submit review');
+      setError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -181,6 +134,7 @@ function ReviewerPortal() {
                         color="success"
                         size="small"
                         onClick={() => handleActionClick(app, 'accepted')}
+                        disabled={app.status !== ''}
                       >
                         Accept
                       </Button>
@@ -189,6 +143,7 @@ function ReviewerPortal() {
                         color="error"
                         size="small"
                         onClick={() => handleActionClick(app, 'rejected')}
+                        disabled={app.status !== ''}
                       >
                         Reject
                       </Button>
@@ -197,14 +152,21 @@ function ReviewerPortal() {
                         color="warning"
                         size="small"
                         onClick={() => handleActionClick(app, 'rework')}
+                        disabled={app.status !== ''}
                       >
                         Rework
                       </Button>
                     </Box>
                   </TableCell>
                   <TableCell sx={{ 
-                    backgroundColor: getStatusColor(app.status),
-                    color: getStatusTextColor(app.status),
+                    backgroundColor: app.status === 'accepted' ? '#e8f5e9' :
+                                   app.status === 'rejected' ? '#ffebee' :
+                                   app.status === 'rework' ? '#fff3e0' :
+                                   'transparent',
+                    color: app.status === 'accepted' ? '#2e7d32' :
+                           app.status === 'rejected' ? '#d32f2f' :
+                           app.status === 'rework' ? '#ed6c02' :
+                           'inherit',
                     fontWeight: 'bold',
                     textTransform: 'capitalize'
                   }}>
@@ -219,7 +181,7 @@ function ReviewerPortal() {
 
       <Dialog 
         open={openDialog} 
-        onClose={() => setOpenDialog(false)}
+        onClose={() => !isSubmitting && setOpenDialog(false)}
         maxWidth="sm"
         fullWidth
       >
@@ -240,9 +202,10 @@ function ReviewerPortal() {
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
             required={action === 'rejected' || action === 'rework'}
-            error={error !== ''}
+            error={Boolean(error)}
             helperText={error}
             sx={{ mt: 1 }}
+            disabled={isSubmitting}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2, backgroundColor: '#f8f9fa', borderTop: '1px solid #ddd' }}>
@@ -250,10 +213,15 @@ function ReviewerPortal() {
             onClick={handleSubmit}
             variant="contained"
             color={action === 'accepted' ? 'success' : action === 'rejected' ? 'error' : 'warning'}
+            disabled={isSubmitting}
           >
-            Confirm
+            {isSubmitting ? <CircularProgress size={24} /> : 'Confirm'}
           </Button>
-          <Button onClick={() => setOpenDialog(false)} variant="outlined">
+          <Button 
+            onClick={() => setOpenDialog(false)} 
+            variant="outlined"
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
         </DialogActions>

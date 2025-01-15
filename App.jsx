@@ -1,73 +1,35 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material';
-import CssBaseline from '@mui/material/CssBaseline';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import StudentForm from './components/StudentForm';
 import ReviewerPortal from './components/ReviewerPortal';
 import HodPortal from './components/HodPortal';
 import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1e4c90',
-    },
-    secondary: {
-      main: '#2e7d32',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 600,
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-          borderRadius: 4,
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-        },
-      },
-    },
-  },
-});
-
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<StudentForm />} />
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/reviewer"
-            element={
-              <ProtectedRoute role="reviewer">
-                <ReviewerPortal />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/hod"
-            element={
-              <ProtectedRoute role="hod">
-                <HodPortal />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<StudentForm />} />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/reviewer"
+          element={
+            <ProtectedRoute role="reviewer">
+              <ReviewerPortal />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/hod"
+          element={
+            <ProtectedRoute role="hod">
+              <HodPortal />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import {
   Container,
   Paper,
@@ -17,7 +18,9 @@ import {
   TextField,
   Box,
   Alert,
+  CircularProgress,
 } from '@mui/material';
+import { getApprovedSubmissions, submitHodReview } from '../services/api';
 
 function HodPortal() {
   const [applications, setApplications] = useState([]);
@@ -26,12 +29,23 @@ function HodPortal() {
   const [openDialog, setOpenDialog] = useState(false);
   const [error, setError] = useState('');
   const [action, setAction] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const storedApplications = JSON.parse(localStorage.getItem('applications') || '[]');
-    const acceptedApplications = storedApplications.filter(app => app.status === 'accepted');
-    setApplications(acceptedApplications);
+    fetchApplications();
   }, []);
+
+  const fetchApplications = async () => {
+    try {
+      const data = await getApprovedSubmissions();
+      setApplications(data);
+    } catch (error) {
+      toast.error('Failed to fetch applications');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAction = (app, actionType) => {
     setSelectedApp(app);
@@ -40,24 +54,41 @@ function HodPortal() {
     setError('');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (action === 'reject' && !remarks.trim()) {
       setError('Comments are required for rejection');
       return;
     }
 
-    const updatedApplications = applications.map(app =>
-      app.id === selectedApp.id
-        ? { ...app, hodStatus: action, hodRemarks: remarks }
-        : app
-    );
+    try {
+      setIsSubmitting(true);
+      await submitHodReview({
+        submissionId: selectedApp.id,
+        status: action,
+        remarks: remarks,
+      });
 
-    setApplications(updatedApplications);
-    setOpenDialog(false);
-    setRemarks('');
-    setSelectedApp(null);
-    setError('');
+      await fetchApplications();
+      toast.success('Review submitted successfully');
+      setOpenDialog(false);
+      setRemarks('');
+      setSelectedApp(null);
+      setError('');
+    } catch (error) {
+      toast.error(error.message || 'Failed to submit review');
+      setError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -100,6 +131,7 @@ function HodPortal() {
                         color="success"
                         size="small"
                         onClick={() => handleAction(app, 'accept')}
+                        disabled={app.hodStatus !== ''}
                       >
                         Accept
                       </Button>
@@ -108,6 +140,7 @@ function HodPortal() {
                         color="error"
                         size="small"
                         onClick={() => handleAction(app, 'reject')}
+                        disabled={app.hodStatus !== ''}
                       >
                         Reject
                       </Button>
@@ -134,7 +167,7 @@ function HodPortal() {
 
       <Dialog 
         open={openDialog} 
-        onClose={() => setOpenDialog(false)}
+        onClose={() => !isSubmitting && setOpenDialog(false)}
         maxWidth="sm"
         fullWidth
       >
@@ -155,9 +188,10 @@ function HodPortal() {
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
             required={action === 'reject'}
-            error={error !== ''}
+            error={Boolean(error)}
             helperText={error}
             sx={{ mt: 1 }}
+            disabled={isSubmitting}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2, backgroundColor: '#f8f9fa', borderTop: '1px solid #ddd' }}>
@@ -165,10 +199,15 @@ function HodPortal() {
             onClick={handleSubmit}
             variant="contained"
             color={action === 'accept' ? 'success' : 'error'}
+            disabled={isSubmitting}
           >
-            Confirm
+            {isSubmitting ? <CircularProgress size={24} /> : 'Confirm'}
           </Button>
-          <Button onClick={() => setOpenDialog(false)} variant="outlined">
+          <Button 
+            onClick={() => setOpenDialog(false)} 
+            variant="outlined"
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
         </DialogActions>

@@ -53,7 +53,7 @@ function Login() {
     <>
       <div className="app-header">
         <Container>
-          <Typography variant="h4" align="center">
+          <Typography variant="h4" align="center" sx={{color:'black'}}>
             Staff Login Portal
           </Typography>
         </Container>

@@ -51,8 +51,8 @@ const validationSchema = yup.object({
     .positive('Stipend must be positive')
     .typeError('Please enter a valid number'),
   startDate: yup.date()
-    .required('Start date is required')
-    .min(new Date(), 'Start date cannot be in the past'),
+    .required('Start date is required'),
+    // .min(new Date(), 'Start date cannot be in the past')
   endDate: yup.date()
     .required('End date is required')
     .min(yup.ref('startDate'), 'End date must be after start date'),
@@ -101,6 +101,7 @@ function StudentForm() {
         setFileError(offerLetterError || mailCopyError);
         return;
       }
+      
 
       // Prepare FormData
       const formData = new FormData();
@@ -110,17 +111,29 @@ function StudentForm() {
       formData.append('offerLetter', offerLetter);
       formData.append('mailCopy', mailCopy);
 
-      try {
-        // Send POST request to /submit
-        const response = await axios.post('/submit', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        setSubmissionStatus('Form submitted successfully!');
-      } catch (error) {
-        setSubmissionStatus('Failed to submit the form. Please try again.');
-        console.error('Error submitting form:', error.response?.data || error.message);
-      }
-    },
+  //     try {
+  //       // Send POST request to /submit
+  //       const response = await axios.post('http://localhost:8080/submit', formData, {
+  //     headers: { 'Content-Type': 'multipart/form-data' },
+  //   });
+  //   console.log('Success:', response.data);
+  //   setSubmissionStatus('Form submitted successfully!');
+  // } catch (error) {
+  //   const errorMessage = error.response?.data?.message || 'Failed to submit the form. Please try again.';
+  //   console.error('Error details:', error.response?.data || error.message);
+  //   setSubmissionStatus(errorMessage);
+  // }
+  
+  try {
+    console.log('Form data to submit:', formData);
+    // Simulate success
+    setSubmissionStatus('Form submitted successfully!');
+  } catch (error) {
+    console.error('Simulated error:', error);
+    setSubmissionStatus('Failed to submit the form. Please try again.');
+  }
+  
+},
   });
 
   return (
@@ -389,16 +402,18 @@ function StudentForm() {
               )}
             </Grid>
             <Grid item xs={12}>
-                <Button
-                  variant="contained"
-              color="primary"
-              type="submit"
-              size="large"
-              fullWidth
-              className="submit-button"
-            >
-              Submit Application
+            <Button
+                variant="contained"
+                color="primary"
+                type="submit"
+                size="large"
+                fullWidth
+                className="submit-button"
+                // disabled={!formik.isValid || !formik.values.termsAccepted}
+              >
+                Submit Application
               </Button>
+
               </Grid>
             </Grid>
           </form>
