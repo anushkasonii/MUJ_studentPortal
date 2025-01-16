@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
 import {
   Container,
   Paper,
@@ -20,7 +19,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { getApprovedSubmissions, submitHodReview } from '../services/api';
+import { getApprovedSubmissions, createHodReview } from '../services/api';
 
 function HodPortal() {
   const [applications, setApplications] = useState([]);
@@ -28,26 +27,26 @@ function HodPortal() {
   const [remarks, setRemarks] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
   const [action, setAction] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchApplications();
+    fetchApprovedSubmissions();
   }, []);
 
-  const fetchApplications = async () => {
+  const fetchApprovedSubmissions = async () => {
     try {
       const data = await getApprovedSubmissions();
       setApplications(data);
     } catch (error) {
-      toast.error('Failed to fetch applications');
+      setError('Failed to fetch submissions');
+      console.error('Error fetching submissions:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleAction = (app, actionType) => {
+  const handleAction = async (app, actionType) => {
     setSelectedApp(app);
     setAction(actionType);
     setOpenDialog(true);
@@ -55,34 +54,30 @@ function HodPortal() {
   };
 
   const handleSubmit = async () => {
-    if (action === 'reject' && !remarks.trim()) {
+    if (action === 'Reject' && !remarks.trim()) {
       setError('Comments are required for rejection');
       return;
     }
 
     try {
-      setIsSubmitting(true);
-      await submitHodReview({
-        submissionId: selectedApp.id,
-        status: action,
-        remarks: remarks,
+      await createHodReview({
+        submission_id: selectedApp.id,
+        hod_id: localStorage.getItem('userId'),
+        action: action, // Exactly "Approve" or "Reject"
+        remarks: remarks
       });
 
-      await fetchApplications();
-      toast.success('Review submitted successfully');
+      await fetchApprovedSubmissions();
       setOpenDialog(false);
       setRemarks('');
       setSelectedApp(null);
       setError('');
     } catch (error) {
-      toast.error(error.message || 'Failed to submit review');
-      setError(error.message);
-    } finally {
-      setIsSubmitting(false);
+      setError('Failed to submit review');
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
         <CircularProgress />
@@ -101,6 +96,13 @@ function HodPortal() {
         >
           HOD Portal - Application Review
         </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
@@ -118,11 +120,11 @@ function HodPortal() {
             <TableBody>
               {applications.map((app) => (
                 <TableRow key={app.id}>
-                  <TableCell>{app.registrationNumber}</TableCell>
-                  <TableCell>{app.studentName}</TableCell>
+                  <TableCell>{app.registration_number}</TableCell>
+                  <TableCell>{app.student_name}</TableCell>
                   <TableCell>{app.department}</TableCell>
-                  <TableCell>{app.companyName}</TableCell>
-                  <TableCell>{app.offerType}</TableCell>
+                  <TableCell>{app.company_name}</TableCell>
+                  <TableCell>{app.offer_type}</TableCell>
                   <TableCell>₹{app.stipend}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
@@ -130,34 +132,21 @@ function HodPortal() {
                         variant="contained"
                         color="success"
                         size="small"
-                        onClick={() => handleAction(app, 'accept')}
-                        disabled={app.hodStatus !== ''}
+                        onClick={() => handleAction(app, 'Approve')}
                       >
-                        Accept
+                        Approve
                       </Button>
                       <Button
                         variant="contained"
                         color="error"
                         size="small"
-                        onClick={() => handleAction(app, 'reject')}
-                        disabled={app.hodStatus !== ''}
+                        onClick={() => handleAction(app, 'Reject')}
                       >
                         Reject
                       </Button>
                     </Box>
                   </TableCell>
-                  <TableCell sx={{ 
-                    backgroundColor: app.hodStatus === 'accept' ? '#e8f5e9' : 
-                                   app.hodStatus === 'reject' ? '#ffebee' : 
-                                   'transparent',
-                    color: app.hodStatus === 'accept' ? '#2e7d32' :
-                          app.hodStatus === 'reject' ? '#d32f2f' :
-                          'inherit',
-                    fontWeight: 'bold',
-                    textTransform: 'capitalize'
-                  }}>
-                    {app.hodStatus || ''}
-                  </TableCell>
+                  <TableCell>{app.status}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -167,7 +156,7 @@ function HodPortal() {
 
       <Dialog 
         open={openDialog} 
-        onClose={() => !isSubmitting && setOpenDialog(false)}
+        onClose={() => setOpenDialog(false)}
         maxWidth="sm"
         fullWidth
       >
@@ -182,32 +171,26 @@ function HodPortal() {
           )}
           <TextField
             fullWidth
-            label="Comments"
+            label="Remarks"
             multiline
             rows={4}
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
-            required={action === 'reject'}
+            required={action === 'Reject'}
             error={Boolean(error)}
             helperText={error}
             sx={{ mt: 1 }}
-            disabled={isSubmitting}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2, backgroundColor: '#f8f9fa', borderTop: '1px solid #ddd' }}>
           <Button
             onClick={handleSubmit}
             variant="contained"
-            color={action === 'accept' ? 'success' : 'error'}
-            disabled={isSubmitting}
+            color={action === 'Approve' ? 'success' : 'error'}
           >
-            {isSubmitting ? <CircularProgress size={24} /> : 'Confirm'}
+            Confirm {action}
           </Button>
-          <Button 
-            onClick={() => setOpenDialog(false)} 
-            variant="outlined"
-            disabled={isSubmitting}
-          >
+          <Button onClick={() => setOpenDialog(false)} variant="outlined">
             Cancel
           </Button>
         </DialogActions>

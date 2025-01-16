@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
 import {
   Container,
   Paper,
@@ -20,7 +19,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { getSubmissions, submitReview } from '../services/api';
+import { getSubmissions, createReview } from '../services/api';
 
 function ReviewerPortal() {
   const [applications, setApplications] = useState([]);
@@ -28,22 +27,22 @@ function ReviewerPortal() {
   const [remarks, setRemarks] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
   const [action, setAction] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchApplications();
+    fetchSubmissions();
   }, []);
 
-  const fetchApplications = async () => {
+  const fetchSubmissions = async () => {
     try {
       const data = await getSubmissions();
       setApplications(data);
     } catch (error) {
-      toast.error('Failed to fetch applications');
+      setError('Failed to fetch submissions');
+      console.error('Error fetching submissions:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -56,34 +55,30 @@ function ReviewerPortal() {
   };
 
   const handleSubmit = async () => {
-    if ((action === 'rejected' || action === 'rework') && !remarks.trim()) {
+    if ((action === 'Reject' || action === 'Rework') && !remarks.trim()) {
       setError('Comments are required for reject/rework actions');
       return;
     }
 
     try {
-      setIsSubmitting(true);
-      await submitReview({
-        submissionId: selectedApp.id,
-        status: action,
-        remarks: remarks,
+      await createReview({
+        submission_id: selectedApp.id,
+        reviewer_id: localStorage.getItem('userId'),
+        status: action, // Exactly "Approve", "Reject", or "Rework"
+        comments: remarks
       });
 
-      await fetchApplications();
-      toast.success('Review submitted successfully');
+      await fetchSubmissions();
       setOpenDialog(false);
       setRemarks('');
       setSelectedApp(null);
       setError('');
     } catch (error) {
-      toast.error(error.message || 'Failed to submit review');
-      setError(error.message);
-    } finally {
-      setIsSubmitting(false);
+      setError('Failed to submit review');
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
         <CircularProgress />
@@ -102,6 +97,13 @@ function ReviewerPortal() {
         >
           Reviewer Portal - Student Applications
         </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
@@ -112,7 +114,6 @@ function ReviewerPortal() {
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Company</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Offer Type</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Stipend</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Start Date</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Status</TableCell>
               </TableRow>
@@ -120,30 +121,27 @@ function ReviewerPortal() {
             <TableBody>
               {applications.map((app) => (
                 <TableRow key={app.id}>
-                  <TableCell>{app.registrationNumber}</TableCell>
-                  <TableCell>{app.studentName}</TableCell>
+                  <TableCell>{app.registration_number}</TableCell>
+                  <TableCell>{app.student_name}</TableCell>
                   <TableCell>{app.department}</TableCell>
-                  <TableCell>{app.companyName}</TableCell>
-                  <TableCell>{app.offerType}</TableCell>
+                  <TableCell>{app.company_name}</TableCell>
+                  <TableCell>{app.offer_type}</TableCell>
                   <TableCell>₹{app.stipend}</TableCell>
-                  <TableCell>{new Date(app.startDate).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       <Button
                         variant="contained"
                         color="success"
                         size="small"
-                        onClick={() => handleActionClick(app, 'accepted')}
-                        disabled={app.status !== ''}
+                        onClick={() => handleActionClick(app, 'Approve')}
                       >
-                        Accept
+                        Approve
                       </Button>
                       <Button
                         variant="contained"
                         color="error"
                         size="small"
-                        onClick={() => handleActionClick(app, 'rejected')}
-                        disabled={app.status !== ''}
+                        onClick={() => handleActionClick(app, 'Reject')}
                       >
                         Reject
                       </Button>
@@ -151,27 +149,13 @@ function ReviewerPortal() {
                         variant="contained"
                         color="warning"
                         size="small"
-                        onClick={() => handleActionClick(app, 'rework')}
-                        disabled={app.status !== ''}
+                        onClick={() => handleActionClick(app, 'Rework')}
                       >
                         Rework
                       </Button>
                     </Box>
                   </TableCell>
-                  <TableCell sx={{ 
-                    backgroundColor: app.status === 'accepted' ? '#e8f5e9' :
-                                   app.status === 'rejected' ? '#ffebee' :
-                                   app.status === 'rework' ? '#fff3e0' :
-                                   'transparent',
-                    color: app.status === 'accepted' ? '#2e7d32' :
-                           app.status === 'rejected' ? '#d32f2f' :
-                           app.status === 'rework' ? '#ed6c02' :
-                           'inherit',
-                    fontWeight: 'bold',
-                    textTransform: 'capitalize'
-                  }}>
-                    {app.status}
-                  </TableCell>
+                  <TableCell>{app.status}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -181,7 +165,7 @@ function ReviewerPortal() {
 
       <Dialog 
         open={openDialog} 
-        onClose={() => !isSubmitting && setOpenDialog(false)}
+        onClose={() => setOpenDialog(false)}
         maxWidth="sm"
         fullWidth
       >
@@ -201,27 +185,21 @@ function ReviewerPortal() {
             rows={4}
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
-            required={action === 'rejected' || action === 'rework'}
+            required={action === 'Reject' || action === 'Rework'}
             error={Boolean(error)}
             helperText={error}
             sx={{ mt: 1 }}
-            disabled={isSubmitting}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2, backgroundColor: '#f8f9fa', borderTop: '1px solid #ddd' }}>
           <Button
             onClick={handleSubmit}
             variant="contained"
-            color={action === 'accepted' ? 'success' : action === 'rejected' ? 'error' : 'warning'}
-            disabled={isSubmitting}
+            color={action === 'Approve' ? 'success' : action === 'Reject' ? 'error' : 'warning'}
           >
-            {isSubmitting ? <CircularProgress size={24} /> : 'Confirm'}
+            Confirm {action}
           </Button>
-          <Button 
-            onClick={() => setOpenDialog(false)} 
-            variant="outlined"
-            disabled={isSubmitting}
-          >
+          <Button onClick={() => setOpenDialog(false)} variant="outlined">
             Cancel
           </Button>
         </DialogActions>
