@@ -1,93 +1,167 @@
-import React, { useState } from 'react';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
+import { useState } from 'react';
 import {
   Container,
   Paper,
   Typography,
   TextField,
+  MenuItem,
   Button,
-  Box,
-  Alert,
   FormControlLabel,
   Checkbox,
   Grid,
+  Box,
+  Alert,
 } from '@mui/material';
+import { useFormik } from 'formik';
+import * as yup from 'yup';
+import axios from 'axios';
 import { submitApplication } from '../services/api';
+import { api } from '../services/api'; // Adjust the path if necessary.
 
-const StudentForm = () => {
-  const [formErrors, setFormErrors] = useState([]);
+
+
+
+
+const validationSchema = yup.object({
+  registrationNumber: yup.string().required('Registration number is required'),
+  name: yup.string().required('Name is required'),
+  email: yup.string().email('Enter a valid email').required('Email is required'),
+  mobile: yup
+    .string()
+    .matches(/^[0-9]{10}$/, 'Mobile number must be 10 digits')
+    .required('Mobile number is required'),
+  department: yup.string().required('Department is required'),
+  section: yup.string().required('Section is required'),
+  offerType: yup.string().required('Offer type is required'),
+  companyName: yup.string().required('Company name is required'),
+  companyCity: yup.string().required('City is required'),
+  companyState: yup.string().required('State is required'),
+  companyPin: yup
+    .string()
+    .matches(/^[0-9]{6}$/, 'PIN code must be 6 digits')
+    .required('PIN code is required'),
+  internshipType: yup.string().required('Internship type is required'),
+  ppoPackage: yup.number().when('internshipType', {
+    is: 'Internship with PPO',
+    then: () => yup.number()
+      .required('PPO package is required')
+      .positive('Package must be positive')
+      .typeError('Please enter a valid number'),
+  }),
+  stipend: yup
+    .number()
+    .required('Stipend amount is required')
+    .positive('Stipend must be positive')
+    .typeError('Please enter a valid number'),
+  startDate: yup.date()
+    .required('Start date is required')
+    .min(new Date(), 'Start date cannot be in the past'),
+  endDate: yup.date()
+    .required('End date is required'),
+    //.min(yup.ref('startDate'), 'End date must be after start date'),
+  termsAccepted: yup.boolean().oneOf([true], 'Must accept terms and conditions'),
+});
+
+function StudentForm() {
+  const SUPPORTED_FORMATS = ['application/pdf'];
+const FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const [formErrors, setFormErrors] = useState([]);
+  const [state, setState] = useState('');
   const [offerLetter, setOfferLetter] = useState(null);
   const [mailCopy, setMailCopy] = useState(null);
-  const [submitStatus, setSubmitStatus] = useState('');
+  const [fileError, setFileError] = useState('');
+  const [submissionStatus, setSubmissionStatus] = useState('');
 
-  const SUPPORTED_FORMATS = ['application/pdf'];
-
-  const validationSchema = Yup.object({
-    name: Yup.string().required('Name is required'),
-    registrationNumber: Yup.string().required('Registration number is required'),
-    department: Yup.string().required('Department is required'),
-    companyName: Yup.string().required('Company name is required'),
-    offerType: Yup.string().required('Offer type is required'),
-    stipend: Yup.number().required('Stipend is required').min(0, 'Stipend must be positive'),
-    startDate: Yup.date().required('Start date is required'),
-    email: Yup.string().email('Invalid email').required('Email is required'),
-    termsAccepted: Yup.boolean().oneOf([true], 'You must accept the terms and conditions'),
-  });
+  const validateFile = (file) => {
+    if (!file) return 'File is required';
+    if (!SUPPORTED_FORMATS.includes(file.type)) return 'File must be a PDF';
+    if (file.size > FILE_SIZE) return 'File size must be less than 5MB';
+    return '';
+  };
 
   const formik = useFormik({
     initialValues: {
-      name: '',
       registrationNumber: '',
+      name: '',
+      email: '',
+      mobile: '',
       department: '',
-      companyName: '',
+      section: '',
       offerType: '',
+      companyName: '',
+      companyCity: '',
+      companyState: '',
+      companyPin: '',
+      internshipType: '',
+      ppoPackage: '',
       stipend: '',
       startDate: '',
-      email: '',
+      endDate: '',
       termsAccepted: false,
     },
-    validationSchema,
+    validationSchema: validationSchema,
     onSubmit: async (values) => {
-      try {
-        const errors = [];
-        
-        if (!offerLetter) {
-          errors.push('Offer letter (PDF) is required');
-        } else if (!SUPPORTED_FORMATS.includes(offerLetter.type)) {
-          errors.push('Offer letter must be a PDF file');
-        }
-
-        if (!mailCopy) {
-          errors.push('Mail copy (PDF) is required');
-        } else if (!SUPPORTED_FORMATS.includes(mailCopy.type)) {
-          errors.push('Mail copy must be a PDF file');
-        }
-
-        if (errors.length > 0) {
-          setFormErrors(errors);
-          return;
-        }
-
-        const formData = new FormData();
-        Object.keys(values).forEach(key => {
-          formData.append(key, values[key]);
-        });
-        formData.append('offerLetter', offerLetter);
-        formData.append('mailCopy', mailCopy);
-
-        await submitApplication(formData);
-        setSubmitStatus('success');
-        formik.resetForm();
-        setOfferLetter(null);
-        setMailCopy(null);
-        setFormErrors([]);
-      } catch (error) {
-        setSubmitStatus('error');
-        setFormErrors([error.response?.data?.error || 'Failed to submit application']);
+      const offerLetterError = validateFile(offerLetter);
+      const mailCopyError = validateFile(mailCopy);
+      const errors = [];
+      if (offerLetterError || mailCopyError) {
+        setFileError(offerLetterError || mailCopyError);
+        return;
       }
-    },
+      if (errors.length > 0) {
+        setFormErrors(errors);
+        return;
+      }
+      
+
+      // Prepare FormData
+      const formData = new FormData();
+      Object.entries(values).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+      formData.append('offerLetter', offerLetter);
+      formData.append('mailCopy', mailCopy);
+
+//       try {
+//         // Send POST request to /submit
+//         // const response = await axios.post('http://localhost:8080/submit', formData, {
+//         //   headers: { 'Content-Type': 'multipart/form-data' },
+//         // });
+//         try {
+//           await submitApplication(formData);
+//         console.log('Success:', response.data);
+//         setSubmissionStatus('Form submitted successfully!');
+//       } catch (error) {
+//         const errorMessage = error.response?.data?.message || 'Failed to submit the form. Please try again.';
+//         console.error('Error details:', error.response?.data || error.message);
+//         setSubmissionStatus(errorMessage);
+//       }
+  
+// },
+//   });
+
+try {
+  const formData = new FormData();
+  Object.entries(values).forEach(([key, value]) => {
+    formData.append(key, value);
   });
+  formData.append('offerLetter', offerLetter);
+  formData.append('mailCopy', mailCopy);
+
+  await submitApplication(formData);
+
+
+  // Reset form
+  formik.resetForm();
+  setOfferLetter(null);
+  setMailCopy(null);
+  setFormErrors([]);
+  // Show success message
+} catch (error) {
+  setFormErrors([error.response?.data?.message || 'Failed to submit application']);
+}
+},
+});
 
   return (
     <Box>

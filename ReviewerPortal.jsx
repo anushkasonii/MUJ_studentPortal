@@ -38,16 +38,17 @@ function ReviewerPortal() {
     try {
       setLoading(true);
       const data = await getSubmissions();
-      setApplications(Array.isArray(data) ? data : []);
+      setApplications(data); // Ensure data is set correctly
       setError('');
     } catch (error) {
       setError('Failed to fetch submissions');
       console.error('Error fetching submissions:', error);
-      setApplications([]);
+      setApplications([]); // Clear applications on error
     } finally {
       setLoading(false);
     }
   };
+  
 
   const handleActionClick = (app, actionType) => {
     setSelectedApp(app);
@@ -122,54 +123,55 @@ function ReviewerPortal() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {applications.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} align="center">
-                    No applications found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                applications.map((app) => (
-                  <TableRow key={app.id}>
-                    <TableCell>{app.registration_number}</TableCell>
-                    <TableCell>{app.name}</TableCell>
-                    <TableCell>{app.department}</TableCell>
-                    <TableCell>{app.company_name}</TableCell>
-                    <TableCell>{app.offer_type}</TableCell>
-                    <TableCell>₹{app.stipend}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Button
-                          variant="contained"
-                          color="success"
-                          size="small"
-                          onClick={() => handleActionClick(app, 'Approve')}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="error"
-                          size="small"
-                          onClick={() => handleActionClick(app, 'Reject')}
-                        >
-                          Reject
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="warning"
-                          size="small"
-                          onClick={() => handleActionClick(app, 'Rework')}
-                        >
-                          Rework
-                        </Button>
-                      </Box>
-                    </TableCell>
-                    <TableCell>{app.status}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
+  {applications.length === 0 ? (
+    <TableRow>
+      <TableCell colSpan={8} align="center">
+        No applications found
+      </TableCell>
+    </TableRow>
+  ) : (
+    applications.map((app) => (
+      <TableRow key={app.id}>
+        <TableCell>{app.registration_number}</TableCell>
+        <TableCell>{app.name}</TableCell>
+        <TableCell>{app.department}</TableCell>
+        <TableCell>{app.company_name}</TableCell>
+        <TableCell>{app.offer_type}</TableCell>
+        <TableCell>₹{app.stipend_amount}</TableCell>
+        <TableCell>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Button
+              variant="contained"
+              color="success"
+              size="small"
+              onClick={() => handleActionClick(app, 'Approve')}
+            >
+              Approve
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              size="small"
+              onClick={() => handleActionClick(app, 'Reject')}
+            >
+              Reject
+            </Button>
+            <Button
+              variant="contained"
+              color="warning"
+              size="small"
+              onClick={() => handleActionClick(app, 'Rework')}
+            >
+              Rework
+            </Button>
+          </Box>
+        </TableCell>
+        <TableCell>{app.status}</TableCell>
+      </TableRow>
+    ))
+  )}
+</TableBody>
+
           </Table>
         </TableContainer>
       </Paper>

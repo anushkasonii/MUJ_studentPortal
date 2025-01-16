@@ -49,9 +49,18 @@ export const loginHod = async (credentials) => {
 
 // Get all submissions for reviewer
 export const getSubmissions = async () => {
-  const response = await mainApi.get('/reviewer/submissions');
-  return response.data;
+  const token = localStorage.getItem('token');
+  const response = await fetch('http://localhost:8001/reviewer/submissions', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  const data = await response.json();
+  return data.submissions || []; // Return the submissions array
 };
+
 
 // Create reviewer review
 export const createReview = async (reviewData) => {
