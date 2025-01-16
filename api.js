@@ -45,6 +45,12 @@ export const loginReviewer = async (credentials) => {
   return response.data;
 };
 
+// Admin authentication
+export const loginAdmin = async (credentials) => {
+  const response = await mainApi.post('/admin/login', credentials);
+  return response.data;
+};
+
 // HOD authentication
 export const loginHod = async (credentials) => {
   const response = await mainApi.post('/hod/login', credentials);

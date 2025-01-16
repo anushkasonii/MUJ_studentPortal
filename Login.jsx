@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginReviewer, loginHod } from "../services/api";
+import { loginReviewer, loginHod, loginAdmin } from "../services/api";
 import { CircularProgress } from "@mui/material";
-import logo from './muj_header.png';
-
+import logo from "./muj_header.png";
 
 import {
   Container,
@@ -28,32 +27,19 @@ function Login() {
   const handleSubmit = async (e, role) => {
     e.preventDefault();
 
-    // Basic validation
     if (!formData.email || !formData.password) {
       setError("Please fill in all fields");
       return;
     }
     setLoading(true);
 
-    // const trimmedEmail = formData.email.trim();
-    // const trimmedPassword = formData.password.trim();
-
-    // try {
-    //   console.log('Sending data:', { email: trimmedEmail, password: trimmedPassword });
-
-    //   const response = await fetch(`http://localhost:8080/${role}/login`, {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify({
-    //       email: trimmedEmail,
-    //       password: trimmedPassword,
-    //     }),
-    //   });
-
     try {
-      const loginFn = role === "reviewer" ? loginReviewer : loginHod;
+      const loginFn =
+        role === "reviewer"
+          ? loginReviewer
+          : role === "hod"
+          ? loginHod
+          : loginAdmin; // Add the logic for admin login
       const response = await loginFn({
         email: formData.email,
         password: formData.password,
@@ -64,13 +50,16 @@ function Login() {
       localStorage.setItem("userId", response.id);
       localStorage.setItem("isAuthenticated", "true");
 
-      navigate(role === "reviewer" ? "/reviewer" : "/hod");
+      navigate(
+        role === "reviewer" ? "/reviewer" : role === "hod" ? "/hod" : "/admin"
+      );
     } catch (error) {
       setError(error.response?.data?.error || "Invalid credentials");
     } finally {
       setLoading(false);
     }
   };
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -99,137 +88,143 @@ function Login() {
   // };
 
   return (
-    <Box 
-    sx={{
-      minHeight: "100vh", // Full viewport height
-      minWidth:"100vw",
-      display: "block",
-      
-      alignItems: "center", // Vertical alignment
-      justifyContent: "center", // Horizontal alignment
-      backgroundColor: "#f5f5f5", // Light gray background
-      color: "#1e4c90", // Primary text color
-    }}
+    <Box
+      sx={{
+        minHeight: "100vh", // Full viewport height
+        minWidth: "100vw",
+        display: "block",
+
+        alignItems: "center", // Vertical alignment
+        justifyContent: "center", // Horizontal alignment
+        backgroundColor: "#f5f5f5", // Light gray background
+        color: "#1e4c90", // Primary text color
+      }}
     >
-    <>
-    
-      <div className="app-header">
-         {/* Header Section */}
-      <Box
-        sx={{
-          width: "100%",
-          
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-         
-          
-        }}
-      >
-        <img
-          src={logo} // Replace with the actual path to your logo
-          alt="Manipal University Jaipur"
-          style={{
-            maxWidth: "400px", // Adjust logo size
-            height: "auto",
-          }}
-        />
-      </Box>
-        <Container >
-        <Typography
-            variant="h4"
-            align="center"
+      <>
+        <div className="app-header">
+          {/* Header Section */}
+          <Box
             sx={{
-              
-              mb: 4,
-              fontWeight: "bold",
-              color: "#335DA2", // Use blue for title
+              width: "100%",
+
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            Staff Login Portal
-          </Typography>
-        </Container>
-      </div>
-      <Container maxWidth="sm">
-      <Paper
-          className="login-container"
-          sx={{
-            p: 4,
-            borderRadius: 2,
-            boxShadow: 3,
-            backgroundColor: "#fff", // White background
-            border: "1px solid #e0e0e0",
-          }}
-        >
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          <form>
-            <Box sx={{ mb: 3 }}>
-              <TextField
-                fullWidth
-                label="Email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                variant="outlined"
-                sx={{ backgroundColor: "white" }}
-              />
-            </Box>
-            <Box sx={{ mb: 4 }}>
-              <TextField
-                fullWidth
-                label="Password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                variant="outlined"
-                sx={{ backgroundColor: "white" }}
-              />
-            </Box>
-            <Box sx={{ display: "flex", gap: 2, flexDirection: "column" }}>
-              {["hod", "reviewer"].map((role) => (
-                <Button
-                  key={role}
+            <img
+              src={logo} // Replace with the actual path to your logo
+              alt="Manipal University Jaipur"
+              style={{
+                maxWidth: "400px", // Adjust logo size
+                height: "auto",
+              }}
+            />
+          </Box>
+          <Container>
+            <Typography
+              variant="h4"
+              align="center"
+              sx={{
+                mb: 4,
+                fontWeight: "bold",
+                color: "#335DA2", // Use blue for title
+              }}
+            >
+              Staff Login Portal
+            </Typography>
+          </Container>
+        </div>
+        <Container maxWidth="sm">
+          <Paper
+            className="login-container"
+            sx={{
+              p: 4,
+              borderRadius: 2,
+              boxShadow: 3,
+              backgroundColor: "#fff", // White background
+              border: "1px solid #e0e0e0",
+            }}
+          >
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            <form>
+              <Box sx={{ mb: 3 }}>
+                <TextField
                   fullWidth
-                  variant="contained"
-                  color={role === "hod" ? "primary" : "secondary"}
-                  size="large"
-                  onClick={(e) => handleSubmit(e, role)}
-                  disabled={loading}
-                  sx={{
-                    py: 1.5,
-                    backgroundColor: role === "hod" ? "#d05c24" : "#d05c24", 
-                    "&:hover": {
-                      backgroundColor: role === "hod" ? "#c2521a" : "#c2521a", 
-                    },
-                    color: "white",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {loading ? (
-                    <CircularProgress size={24} />
-                  ) : (
-                    `Login as ${role.toUpperCase()}`
-                  )}
-                </Button>
-              ))}
-            </Box>
-          </form>
-        </Paper>
-        
-      </Container>
-      
-    </ >
-    
+                  label="Email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  sx={{ backgroundColor: "white" }}
+                />
+              </Box>
+              <Box sx={{ mb: 4 }}>
+                <TextField
+                  fullWidth
+                  label="Password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  sx={{ backgroundColor: "white" }}
+                />
+              </Box>
+              <Box sx={{ display: "flex", gap: 2, flexDirection: "column" }}>
+                {["hod", "reviewer", "admin"].map((role) => (
+                  <Button
+                    key={role}
+                    fullWidth
+                    variant="contained"
+                    color={
+                      role === "hod" || role === "reviewer"
+                        ? "primary"
+                        : "error"
+                    } // Admin button color
+                    size="large"
+                    onClick={(e) => handleSubmit(e, role)}
+                    disabled={loading}
+                    sx={{
+                      py: 1.5,
+                      backgroundColor: 
+                        role === "hod" 
+                          ? "#d05c24"  // Blue for HOD
+                          : role === "reviewer"
+                          ? "#d26c20"  // Green for Reviewer
+                          : "#d37a1b", // Red for Admin
+                      "&:hover": {
+                        backgroundColor: 
+                          role === "hod"
+                            ? "#c2521a"  // Darker Blue for HOD
+                            : role === "reviewer"
+                            ? "#d16722"  // Darker Green for Reviewer
+                            : "#d3781c", // Darker Red for Admin
+                      },
+                      color: "white",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      `Login as ${role.toUpperCase()}`
+                    )}
+                  </Button>
+                ))}
+              </Box>
+            </form>
+          </Paper>
+        </Container>
+      </>
     </Box>
   );
- 
 }
 
 export default Login;
