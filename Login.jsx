@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { loginReviewer, loginHod } from '../services/api';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { loginReviewer, loginHod } from "../services/api";
+import { CircularProgress } from "@mui/material";
 
 import {
   Container,
@@ -10,28 +11,27 @@ import {
   Button,
   Box,
   Alert,
-} from '@mui/material';
+} from "@mui/material";
 
 function Login() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e, role) => {
     e.preventDefault();
 
     // Basic validation
     if (!formData.email || !formData.password) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
     setLoading(true);
-
 
     // const trimmedEmail = formData.email.trim();
     // const trimmedPassword = formData.password.trim();
@@ -50,34 +50,32 @@ function Login() {
     //     }),
     //   });
 
-      try {
-        const loginFn = role === 'reviewer' ? loginReviewer : loginHod;
-        const response = await loginFn({
-          email: formData.email,
-          password: formData.password
-        });
-  
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('userId', response.id);
-        localStorage.setItem('isAuthenticated', 'true');
-        
-        navigate(role === 'reviewer' ? '/reviewer' : '/hod');
-      } catch (error) {
-        setError(error.response?.data?.error || 'Invalid credentials');
-      } finally {
-        setLoading(false);
-      }
-    };
-    const handleChange = (e) => {
-      setFormData({
-        ...formData,
-        [e.target.name]: e.target.value,
+    try {
+      const loginFn = role === "reviewer" ? loginReviewer : loginHod;
+      const response = await loginFn({
+        email: formData.email,
+        password: formData.password,
       });
-      setError('');
-    };
-  
-  
+
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("userRole", role);
+      localStorage.setItem("userId", response.id);
+      localStorage.setItem("isAuthenticated", "true");
+
+      navigate(role === "reviewer" ? "/reviewer" : "/hod");
+    } catch (error) {
+      setError(error.response?.data?.error || "Invalid credentials");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+    setError("");
+  };
 
   //     if (response.ok) {
   //       const data = await response.json();
@@ -98,13 +96,11 @@ function Login() {
   //   }
   // };
 
-  
-
   return (
     <>
       <div className="app-header">
         <Container>
-          <Typography variant="h4" align="center" sx={{ color: 'black' }}>
+          <Typography variant="h4" align="center" sx={{ color: "black" }}>
             Staff Login Portal
           </Typography>
         </Container>
@@ -126,7 +122,7 @@ function Login() {
                 onChange={handleChange}
                 required
                 variant="outlined"
-                sx={{ backgroundColor: 'white' }}
+                sx={{ backgroundColor: "white" }}
               />
             </Box>
             <Box sx={{ mb: 4 }}>
@@ -139,27 +135,32 @@ function Login() {
                 onChange={handleChange}
                 required
                 variant="outlined"
-                sx={{ backgroundColor: 'white' }}
+                sx={{ backgroundColor: "white" }}
               />
             </Box>
-            <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
-              {['hod', 'reviewer'].map((role) => (
+            <Box sx={{ display: "flex", gap: 2, flexDirection: "column" }}>
+              {["hod", "reviewer"].map((role) => (
                 <Button
                   key={role}
                   fullWidth
                   variant="contained"
-                  color={role === 'hod' ? 'primary' : 'secondary'}
+                  color={role === "hod" ? "primary" : "secondary"}
                   size="large"
                   onClick={(e) => handleSubmit(e, role)}
+                  disabled={loading}
                   sx={{
                     py: 1.5,
-                    backgroundColor: role === 'hod' ? '#1976d2' : '#2e7d32',
-                    '&:hover': {
-                      backgroundColor: role === 'hod' ? '#1565c0' : '#1b5e20',
+                    backgroundColor: role === "hod" ? "#1976d2" : "#2e7d32",
+                    "&:hover": {
+                      backgroundColor: role === "hod" ? "#1565c0" : "#1b5e20",
                     },
                   }}
                 >
-                  Login as {role.toUpperCase()}
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    `Login as ${role.toUpperCase()}`
+                  )}
                 </Button>
               ))}
             </Box>
