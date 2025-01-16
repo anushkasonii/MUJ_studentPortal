@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginReviewer, loginHod } from "../services/api";
 import { CircularProgress } from "@mui/material";
+import logo from './muj_header.png';
+
 
 import {
   Container,
@@ -97,16 +99,68 @@ function Login() {
   // };
 
   return (
+    <Box 
+    sx={{
+      minHeight: "100vh", // Full viewport height
+      minWidth:"100vw",
+      display: "block",
+      
+      alignItems: "center", // Vertical alignment
+      justifyContent: "center", // Horizontal alignment
+      backgroundColor: "#f5f5f5", // Light gray background
+      color: "#1e4c90", // Primary text color
+    }}
+    >
     <>
+    
       <div className="app-header">
-        <Container>
-          <Typography variant="h4" align="center" sx={{ color: "black" }}>
+         {/* Header Section */}
+      <Box
+        sx={{
+          width: "100%",
+          
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+         
+          
+        }}
+      >
+        <img
+          src={logo} // Replace with the actual path to your logo
+          alt="Manipal University Jaipur"
+          style={{
+            maxWidth: "400px", // Adjust logo size
+            height: "auto",
+          }}
+        />
+      </Box>
+        <Container >
+        <Typography
+            variant="h4"
+            align="center"
+            sx={{
+              
+              mb: 4,
+              fontWeight: "bold",
+              color: "#335DA2", // Use blue for title
+            }}
+          >
             Staff Login Portal
           </Typography>
         </Container>
       </div>
       <Container maxWidth="sm">
-        <Paper className="login-container">
+      <Paper
+          className="login-container"
+          sx={{
+            p: 4,
+            borderRadius: 2,
+            boxShadow: 3,
+            backgroundColor: "#fff", // White background
+            border: "1px solid #e0e0e0",
+          }}
+        >
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -150,10 +204,12 @@ function Login() {
                   disabled={loading}
                   sx={{
                     py: 1.5,
-                    backgroundColor: role === "hod" ? "#1976d2" : "#2e7d32",
+                    backgroundColor: role === "hod" ? "#d05c24" : "#d05c24", 
                     "&:hover": {
-                      backgroundColor: role === "hod" ? "#1565c0" : "#1b5e20",
+                      backgroundColor: role === "hod" ? "#c2521a" : "#c2521a", 
                     },
+                    color: "white",
+                    fontWeight: "bold",
                   }}
                 >
                   {loading ? (
@@ -166,9 +222,14 @@ function Login() {
             </Box>
           </form>
         </Paper>
+        
       </Container>
-    </>
+      
+    </ >
+    
+    </Box>
   );
+ 
 }
 
 export default Login;
