@@ -38,16 +38,17 @@ function ReviewerPortal() {
     try {
       setLoading(true);
       const data = await getSubmissions();
-      setApplications(data); // Ensure data is set correctly
+      setApplications(data); // Ensure applications is updated with an array
       setError('');
     } catch (error) {
       setError('Failed to fetch submissions');
       console.error('Error fetching submissions:', error);
-      setApplications([]); // Clear applications on error
+      setApplications([]);
     } finally {
       setLoading(false);
     }
   };
+  
   
 
   const handleActionClick = (app, actionType) => {

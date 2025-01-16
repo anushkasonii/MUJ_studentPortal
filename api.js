@@ -1,8 +1,10 @@
 import axios from 'axios';
 
+// Define API base URLs
 const SUBMISSION_SERVICE_URL = 'http://localhost:8001';
 const MAIN_SERVICE_URL = 'http://localhost:8002';
 
+// Axios instances for each service
 const submissionApi = axios.create({
   baseURL: SUBMISSION_SERVICE_URL,
   headers: {
@@ -18,8 +20,8 @@ const mainApi = axios.create({
   withCredentials: true, // Important for CORS
 });
 
-// Add JWT token to requests
-[submissionApi, mainApi].forEach(api => {
+// Add JWT token to requests automatically
+[submissionApi, mainApi].forEach((api) => {
   api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -28,6 +30,8 @@ const mainApi = axios.create({
     return config;
   });
 });
+
+// API Functions
 
 // Student form submission
 export const submitApplication = async (formData) => {
@@ -49,27 +53,13 @@ export const loginHod = async (credentials) => {
 
 // Get all submissions for reviewer
 export const getSubmissions = async () => {
-  const token = localStorage.getItem('token');
-  const response = await fetch('http://localhost:8001/reviewer/submissions', {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-  const data = await response.json();
-  return data.submissions || []; // Return the submissions array
+  const response = await submissionApi.get('/reviewer/submissions'); // Use submissionApi
+  return response.data.submissions || [];
 };
-
 
 // Create reviewer review
 export const createReview = async (reviewData) => {
-  const response = await mainApi.post('/reviewer/fpc_reviews', {
-    submission_id: reviewData.submission_id,
-    reviewer_id: reviewData.reviewer_id,
-    status: reviewData.status, // Must be "Approve", "Reject", or "Rework"
-    comments: reviewData.comments
-  });
+  const response = await mainApi.post('/reviewer/fpc_reviews', reviewData);
   return response.data;
 };
 
@@ -81,11 +71,9 @@ export const getApprovedSubmissions = async () => {
 
 // Create HOD review
 export const createHodReview = async (reviewData) => {
-  const response = await mainApi.post('/hod/hod_reviews', {
-    submission_id: reviewData.submission_id,
-    hod_id: reviewData.hod_id,
-    action: reviewData.action, // Must be "Approve" or "Reject"
-    remarks: reviewData.remarks
-  });
+  const response = await mainApi.post('/hod/hod_reviews', reviewData);
   return response.data;
 };
+
+// Export Axios instances if needed elsewhere
+export { submissionApi, mainApi };
