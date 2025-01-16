@@ -36,11 +36,14 @@ function ReviewerPortal() {
 
   const fetchSubmissions = async () => {
     try {
+      setLoading(true);
       const data = await getSubmissions();
-      setApplications(data);
+      setApplications(Array.isArray(data) ? data : []);
+      setError('');
     } catch (error) {
       setError('Failed to fetch submissions');
       console.error('Error fetching submissions:', error);
+      setApplications([]);
     } finally {
       setLoading(false);
     }
@@ -64,7 +67,7 @@ function ReviewerPortal() {
       await createReview({
         submission_id: selectedApp.id,
         reviewer_id: localStorage.getItem('userId'),
-        status: action, // Exactly "Approve", "Reject", or "Rework"
+        status: action, // "Approve", "Reject", or "Rework"
         comments: remarks
       });
 
@@ -74,7 +77,7 @@ function ReviewerPortal() {
       setSelectedApp(null);
       setError('');
     } catch (error) {
-      setError('Failed to submit review');
+      setError(error.response?.data?.error || 'Failed to submit review');
     }
   };
 
@@ -119,45 +122,53 @@ function ReviewerPortal() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {applications.map((app) => (
-                <TableRow key={app.id}>
-                  <TableCell>{app.registration_number}</TableCell>
-                  <TableCell>{app.student_name}</TableCell>
-                  <TableCell>{app.department}</TableCell>
-                  <TableCell>{app.company_name}</TableCell>
-                  <TableCell>{app.offer_type}</TableCell>
-                  <TableCell>₹{app.stipend}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        size="small"
-                        onClick={() => handleActionClick(app, 'Approve')}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="error"
-                        size="small"
-                        onClick={() => handleActionClick(app, 'Reject')}
-                      >
-                        Reject
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="warning"
-                        size="small"
-                        onClick={() => handleActionClick(app, 'Rework')}
-                      >
-                        Rework
-                      </Button>
-                    </Box>
+              {applications.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center">
+                    No applications found
                   </TableCell>
-                  <TableCell>{app.status}</TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                applications.map((app) => (
+                  <TableRow key={app.id}>
+                    <TableCell>{app.registration_number}</TableCell>
+                    <TableCell>{app.name}</TableCell>
+                    <TableCell>{app.department}</TableCell>
+                    <TableCell>{app.company_name}</TableCell>
+                    <TableCell>{app.offer_type}</TableCell>
+                    <TableCell>₹{app.stipend}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          size="small"
+                          onClick={() => handleActionClick(app, 'Approve')}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="error"
+                          size="small"
+                          onClick={() => handleActionClick(app, 'Reject')}
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="warning"
+                          size="small"
+                          onClick={() => handleActionClick(app, 'Rework')}
+                        >
+                          Rework
+                        </Button>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{app.status}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
