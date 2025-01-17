@@ -164,13 +164,22 @@ try {
 });
 
   return (
-    <Box>
-      <Box className="app-header" sx={{ py: 3, backgroundColor: '#1976d2', color: 'white', textAlign: 'center', mb: 1 }}>
-        <Typography variant="h4" sx={{ mb: 3 }}>Internship NOC Application Portal</Typography>
+    <Box sx={{
+      minHeight: "100vh", // Full viewport height
+      minWidth: "100vw",
+      display: "block",
+
+      alignItems: "center", // Vertical alignment
+      justifyContent: "center", // Horizontal alignment
+      backgroundColor: "#f5f5f5", // Light gray background
+      color: "#1e4c90", // Primary text color
+    }}>
+      <Box className="app-header" sx={{ py: 3, backgroundColor: '#d05c24', color: 'white', textAlign: 'center', mb: 1 }}>
+        <Typography variant="h4" sx={{ mb: 3,  }}>Internship NOC Application Portal</Typography>
       </Box>
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-          <Typography variant="h5" gutterBottom align="center" color="primary">
+          <Typography variant="h5" gutterBottom align="center" color="#d05c24" sx={{mb:3, fontSize:'26px'}}>
             Fill in the Details
           </Typography>
           {fileError && <Alert severity="error" sx={{ mb: 2 }}>{fileError}</Alert>}
@@ -434,6 +443,7 @@ try {
                 color="primary"
                 type="submit"
                 size="large"
+                sx={{backgroundColor:"#d05c24"}}
                 fullWidth
                 className="submit-button"
                 //disabled={!formik.isValid || !formik.values.termsAccepted}
