@@ -96,13 +96,15 @@ function AdminPortal() {
 
   return (
     <Box
-      sx={{
-        minHeight: "100vh",
-        width: "100vw",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#f8f9fa",
+    sx={{
+        minHeight: "140vh",
+            minWidth: "100vw",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            mt:-45,
+        backgroundColor: "#f8f9fa", // Full gray background
         padding: 2,
       }}
     >

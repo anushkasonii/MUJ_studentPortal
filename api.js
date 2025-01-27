@@ -1,10 +1,9 @@
 import axios from 'axios';
 
-// Define API base URLs
 const SUBMISSION_SERVICE_URL = 'http://localhost:8001';
 const MAIN_SERVICE_URL = 'http://localhost:8002';
 
-// Axios instances for each service
+// Create separate instances for different services
 const submissionApi = axios.create({
   baseURL: SUBMISSION_SERVICE_URL,
   headers: {
@@ -17,11 +16,10 @@ const mainApi = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Important for CORS
 });
 
-// Add JWT token to requests automatically
-[submissionApi, mainApi].forEach((api) => {
+// Add JWT token to requests for both instances
+[submissionApi, mainApi].forEach(api => {
   api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -31,55 +29,88 @@ const mainApi = axios.create({
   });
 });
 
-// API Functions
-
-// Student form submission
-export const submitApplication = async (formData) => {
-  const response = await submissionApi.post('/submit', formData);
+// Auth endpoints (Main service)
+export const loginSpc = async (credentials) => {
+  const response = await mainApi.post('/spc/login', credentials);
   return response.data;
 };
 
-// Reviewer authentication
-export const loginReviewer = async (credentials) => {
-  const response = await mainApi.post('/reviewer/login', credentials);
-  return response.data;
-};
-
-// Admin authentication
-export const loginAdmin = async (credentials) => {
-  const response = await mainApi.post('/admin/login', credentials);
-  return response.data;
-};
-
-// HOD authentication
 export const loginHod = async (credentials) => {
   const response = await mainApi.post('/hod/login', credentials);
   return response.data;
 };
 
-// Get all submissions for reviewer
+export const loginAdmin = async (credentials) => {
+  const response = await mainApi.post('/admin/login', credentials);
+  return response.data;
+};
+
+// Submission endpoints (Submission service)
+export const submitApplication = async (formData) => {
+  const response = await submissionApi.post('/submit', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+// Review endpoints (Main service)
 export const getSubmissions = async () => {
-  const response = await submissionApi.get('/reviewer/submissions'); // Use submissionApi
-  return response.data.submissions || [];
+  try {
+    const response = await mainApi.get('/spc/submissions');
+    if (response.data && Array.isArray(response.data.submissions)) {
+      return response.data.submissions; // Extract the submissions array
+    } else {
+      throw new Error('Invalid data format or submissions key missing');
+    }
+  } catch (error) {
+    console.error('Error fetching submissions:', error);
+    throw new Error(error.response?.data?.message || 'Failed to fetch submissions');
+  }
 };
 
-// Create reviewer review
-export const createReview = async (reviewData) => {
-  const response = await mainApi.post('/reviewer/fpc_reviews', reviewData);
-  return response.data;
-};
-
-// Get approved submissions for HOD
 export const getApprovedSubmissions = async () => {
-  const response = await mainApi.get('/hod/approved_submissions');
+  try {
+    const response = await mainApi.get('/hod/approved_submissions');
+    if (response.data && Array.isArray(response.data.submissions)) {
+      return response.data.submissions; // Extract the submissions array
+    } else {
+      throw new Error('Invalid data format or submissions key missing');
+    }
+  } catch (error) {
+    console.error('Error fetching submissions:', error);
+    throw new Error(error.response?.data?.message || 'Failed to fetch submissions');
+  }
+};
+
+export const createReview = async (reviewData) => {
+  const response = await mainApi.post('/spc/spc_reviews', reviewData);
   return response.data;
 };
 
-// Create HOD review
 export const createHodReview = async (reviewData) => {
   const response = await mainApi.post('/hod/hod_reviews', reviewData);
   return response.data;
 };
 
-// Export Axios instances if needed elsewhere
+// Admin endpoints (Main service)
+export const getHods = async () => {
+  const response = await mainApi.get('/admin/hods');
+  return response.data; // Assuming the API returns a list of HODs
+};
+
+export const getSpcs = async () => {
+  const response = await mainApi.get('/admin/spcs');
+  return response.data; // Assuming the API returns a list of SPCs
+};
+
+export const createHod = async (hodData) => {
+  const response = await mainApi.post('/admin/hod', hodData);
+  return response.data; // Assuming the API returns the created HOD
+};
+
+export const createSpc = async (spcData) => {
+  const response = await mainApi.post('/admin/spc', spcData);
+  return response.data; // Assuming the API returns the created SPC
+};
+
 export { submissionApi, mainApi };
