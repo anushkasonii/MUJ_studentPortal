@@ -109,13 +109,48 @@ function HodPortal() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Paper elevation={3} sx={{ p: 4, backgroundColor: '#f8f9fa' }}>
+    <Box
+    sx={{
+      minHeight: "140vh",
+          minWidth: "100vw",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          mt:-45,
+      backgroundColor: "#f8f9fa", // Full gray background
+      padding: 2,
+    }}
+  >
+    <Container
+      maxWidth="lg" disableGutters
+      sx={{
+        py: 4,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        backgroundColor: "#f8f9fa",
+      }}
+    >
+      <Paper elevation={3} sx={{
+        p: 4,
+        borderRadius: 2,
+        maxWidth: 1200,
+        margin: "0 auto", // Center align
+        backgroundColor: "#fff", // Keep the Paper white
+      }}
+      >
         <Typography
           variant="h4"
           gutterBottom
           color="primary"
-          sx={{ mb: 4, fontWeight: 'bold', textAlign: 'center' }}
+          sx={{
+            mb: 4,
+            fontWeight: "bold",
+            textAlign: "center",
+            color: "#d05c24",
+          }}
         >
           HOD Portal - Application Review
         </Typography>
@@ -129,7 +164,7 @@ function HodPortal() {
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: '#1e4c90' }}>
+            <TableRow sx={{ backgroundColor: "#D97C4F" }}>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Reg. No.</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Student Name</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Department</TableCell>
@@ -219,6 +254,7 @@ function HodPortal() {
         </DialogActions>
       </Dialog>
     </Container>
+    </Box>
   );
 }
 
