@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getIdFromToken } from '../utils/authUtils';
 import {
   Container,
   Paper,
@@ -37,7 +38,12 @@ function HodPortal() {
   const fetchApprovedSubmissions = async () => {
     try {
       const data = await getApprovedSubmissions();
-      setApplications(data);
+      if (Array.isArray(data)) {
+        setApplications(data);
+      } else {
+        throw new Error('Invalid data format');
+      }
+      setError('');
     } catch (error) {
       setError('Failed to fetch submissions');
       console.error('Error fetching submissions:', error);
@@ -54,18 +60,35 @@ function HodPortal() {
   };
 
   const handleSubmit = async () => {
-    if (action === 'Reject' && !remarks.trim()) {
+    if (action === 'Rejected' && !remarks.trim()) {
       setError('Comments are required for rejection');
       return;
     }
 
+    const hodId = getIdFromToken('hod');
+
+    if (!hodId) {
+      setError('HOD ID not found');
+      return;
+    }
+
     try {
-      await createHodReview({
+      const response = await createHodReview({
         submission_id: selectedApp.id,
-        hod_id: localStorage.getItem('userId'),
-        action: action, // Exactly "Approve" or "Reject"
-        remarks: remarks
+        hod_id: hodId,
+        action: action,
+        remarks: remarks,
       });
+
+      if (response.noc_path && action === 'Approved') {
+        const nocUrl = response.noc_path;
+        const a = document.createElement('a');
+        a.href = nocUrl;
+        a.download = `${selectedApp.registration_number}_noc.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
 
       await fetchApprovedSubmissions();
       setOpenDialog(false);
@@ -88,9 +111,9 @@ function HodPortal() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Paper elevation={3} sx={{ p: 4, backgroundColor: '#f8f9fa' }}>
-        <Typography 
-          variant="h4" 
-          gutterBottom 
+        <Typography
+          variant="h4"
+          gutterBottom
           color="primary"
           sx={{ mb: 4, fontWeight: 'bold', textAlign: 'center' }}
         >
@@ -121,18 +144,18 @@ function HodPortal() {
               {applications.map((app) => (
                 <TableRow key={app.id}>
                   <TableCell>{app.registration_number}</TableCell>
-                  <TableCell>{app.student_name}</TableCell>
+                  <TableCell>{app.name}</TableCell>
                   <TableCell>{app.department}</TableCell>
                   <TableCell>{app.company_name}</TableCell>
                   <TableCell>{app.offer_type}</TableCell>
-                  <TableCell>₹{app.stipend}</TableCell>
+                  <TableCell>₹{app.stipend_amount}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button
                         variant="contained"
                         color="success"
                         size="small"
-                        onClick={() => handleAction(app, 'Approve')}
+                        onClick={() => handleAction(app, 'Approved')}
                       >
                         Approve
                       </Button>
@@ -140,7 +163,7 @@ function HodPortal() {
                         variant="contained"
                         color="error"
                         size="small"
-                        onClick={() => handleAction(app, 'Reject')}
+                        onClick={() => handleAction(app, 'Rejected')}
                       >
                         Reject
                       </Button>
@@ -154,8 +177,8 @@ function HodPortal() {
         </TableContainer>
       </Paper>
 
-      <Dialog 
-        open={openDialog} 
+      <Dialog
+        open={openDialog}
         onClose={() => setOpenDialog(false)}
         maxWidth="sm"
         fullWidth
@@ -176,7 +199,7 @@ function HodPortal() {
             rows={4}
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
-            required={action === 'Reject'}
+            required={action === 'Rejected'}
             error={Boolean(error)}
             helperText={error}
             sx={{ mt: 1 }}
@@ -186,7 +209,7 @@ function HodPortal() {
           <Button
             onClick={handleSubmit}
             variant="contained"
-            color={action === 'Approve' ? 'success' : 'error'}
+            color={action === 'Approved' ? 'success' : 'error'}
           >
             Confirm {action}
           </Button>
