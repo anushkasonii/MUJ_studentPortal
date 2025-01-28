@@ -19,16 +19,21 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
-import { getHods, getSpcs, createHod, createSpc } from "../services/api";
+import { getHods, getFpcs, createHod, createFpc } from "../services/api";
 
 function AdminPortal() {
   const [hods, setHods] = useState([]);
-  const [spcs, setSpcs] = useState([]);
+  const [fpcs, setFpcs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogType, setDialogType] = useState(""); // "hod" or "spc"
-  const [formData, setFormData] = useState({ name: "", email: "" });
+  const [dialogType, setDialogType] = useState(""); // "hod" or "fpc"
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    department: "",
+  });
 
   useEffect(() => {
     fetchData();
@@ -38,9 +43,9 @@ function AdminPortal() {
     try {
       setLoading(true);
       const fetchedHods = await getHods();
-      const fetchedSpcs = await getSpcs();
+      const fetchedFpcs = await getFpcs();
       setHods(fetchedHods);
-      setSpcs(fetchedSpcs);
+      setFpcs(fetchedFpcs);
       setError("");
     } catch (err) {
       setError("Failed to fetch data");
@@ -63,15 +68,15 @@ function AdminPortal() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.email) {
+    if (!formData.name || !formData.email || !formData.password || !formData.department) {
       setError("Please fill all fields");
       return;
     }
     try {
       if (dialogType === "hod") {
         await createHod(formData);
-      } else if (dialogType === "spc") {
-        await createSpc(formData);
+      } else if (dialogType === "fpc") {
+        await createFpc(formData);
       }
       fetchData(); // Refresh data
       handleCloseDialog();
@@ -80,6 +85,7 @@ function AdminPortal() {
       console.error(err);
     }
   };
+  
 
   if (loading) {
     return (
@@ -96,15 +102,13 @@ function AdminPortal() {
 
   return (
     <Box
-    sx={{
-        minHeight: "140vh",
-            minWidth: "100vw",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            mt:-45,
-        backgroundColor: "#f8f9fa", // Full gray background
+      sx={{
+        minHeight: "100vh",
+        width: "100vw",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f8f9fa",
         padding: 2,
       }}
     >
@@ -113,14 +117,20 @@ function AdminPortal() {
           elevation={3}
           sx={{
             p: 4,
+            ml: 10,
             borderRadius: 2,
             backgroundColor: "#fff",
-            width: "100%",
+            width: "80%",
           }}
         >
           <Typography
             variant="h4"
-            sx={{ mb: 4, fontWeight: "bold", color: "#d05c24", textAlign: "center" }}
+            sx={{
+              mb: 4,
+              fontWeight: "bold",
+              color: "#d05c24",
+              textAlign: "center",
+            }}
           >
             Admin Portal
           </Typography>
@@ -139,8 +149,12 @@ function AdminPortal() {
             <Table>
               <TableHead sx={{ backgroundColor: "#D97C4F" }}>
                 <TableRow>
-                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>Name</TableCell>
-                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>Email</TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                    Name
+                  </TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                    Email
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -166,23 +180,27 @@ function AdminPortal() {
             Add HOD
           </Button>
 
-          {/* SPCs Table */}
+          {/* FPCs Table */}
           <Typography variant="h5" sx={{ mb: 2, color: "#d05c24" }}>
-            List of SPCs
+            List of FPCs
           </Typography>
           <TableContainer component={Paper}>
             <Table>
               <TableHead sx={{ backgroundColor: "#D97C4F" }}>
                 <TableRow>
-                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>Name</TableCell>
-                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>Email</TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                    Name
+                  </TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                    Email
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {spcs.map((spc) => (
-                  <TableRow key={spc.id}>
-                    <TableCell>{spc.name}</TableCell>
-                    <TableCell>{spc.email}</TableCell>
+                {fpcs.map((fpc) => (
+                  <TableRow key={fpc.id}>
+                    <TableCell>{fpc.name}</TableCell>
+                    <TableCell>{fpc.email}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -196,13 +214,13 @@ function AdminPortal() {
               color: "white",
               "&:hover": { backgroundColor: "#bf4e1f" },
             }}
-            onClick={() => handleOpenDialog("spc")}
+            onClick={() => handleOpenDialog("fpc")}
           >
-            Add SPC
+            Add FPC
           </Button>
         </Paper>
 
-        {/* Dialog for Adding HOD/SPC */}
+        {/* Dialog for Adding HOD/FPC */}
         <Dialog open={openDialog} onClose={handleCloseDialog}>
           <DialogTitle
             sx={{
@@ -211,7 +229,7 @@ function AdminPortal() {
               textAlign: "center",
             }}
           >
-            Add {dialogType === "hod" ? "HOD" : "SPC"}
+            ADD {dialogType === "hod" ? "HOD" : "FPC"}
           </DialogTitle>
           <DialogContent>
             {error && (
@@ -223,18 +241,46 @@ function AdminPortal() {
               label="Name"
               fullWidth
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              sx={{ mb: 2 }}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              sx={{ mb: 2 , mt:3}}
             />
             <TextField
               label="Email"
               fullWidth
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              label="Password"
+              type="password"
+              fullWidth
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              label="Department"
+              fullWidth
+              value={formData.department}
+              onChange={(e) =>
+                setFormData({ ...formData, department: e.target.value })
+              }
+              sx={{ mb: 2 }}
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleSubmit} variant="contained" sx={{ backgroundColor: "#d05c24", color: "white" }}>
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              sx={{ backgroundColor: "#d05c24", color: "white" }}
+            >
               Submit
             </Button>
             <Button onClick={handleCloseDialog} variant="outlined">
